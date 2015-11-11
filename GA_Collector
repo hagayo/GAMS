@@ -1,0 +1,50 @@
+#!/usr/bin/python
+"""This module creates access to Google's Analytics-API to collect campaigns information."""
+
+#from __future__ import unicode_literals
+#that would cause Python 2 to treat 'string' as Unicode, used for URL-encoded strings manipulations
+
+import argparse
+from apiclient.discovery import build
+from apiclient.errors import HttpError
+from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.client import AccessTokenRefreshError
+
+import httplib2
+from oauth2client import client
+from oauth2client import file
+from oauth2client import tools
+
+class GA_Collector:
+
+    # init the collector's credentials, account, profile and service 
+    def __init__(self, carrierCodeName):     #, secretsFilename, accountEmail):
+        self.scope = ['https://www.googleapis.com/auth/analytics.readonly'] # Authentication-scopes/Permissions of a GA request
+        self.service = self.getAnalyticsService()
+        self.profile = self.getProfileID(carrierCodeName)
+        self.carrierAccountID = 'ga:' + self.profile
+
+    # Get a specific Google-API connected service-object used to query/communicate Google Core-Reporting API.
+    def getApiService(self, api_name, api_version, scope, key_file_location, service_account_email):
+        f = open(key_file_location, 'rb')
+        key = f.read()
+        f.close()
+
+        credentials = SignedJwtAssertionCredentials(service_account_email, key, scope=scope)
+        http = credentials.authorize(httplib2.Http())
+        service = build(api_name, api_version, http=http)   # Build the service object.
+        return service
+
+    # Get Google Analytics-API connected service-object
+    def getAnalyticsService(self):
+        # Authentication service-account email and key-file location to construct API service
+        # ADD YOUR DEVELOPER EMAIL BELOW
+        service_account_email = 'XXXXXXXXXXXXXXXXXXXXXX@developer.gserviceaccount.com'
+        key_file_location = '/home/GAMS/client_secrets.p12'
+        service = self.getApiService('analytics', 'v3', self.scope, key_file_location, service_account_email)
+        return service
+
+
+# for module unit-testing
+if __name__ == '__main__':
+    testDC()

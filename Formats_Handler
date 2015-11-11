@@ -1,0 +1,33 @@
+#!/usr/bin/python
+"""This module is responsible for reading/writing into different formats of files."""
+
+import csv
+
+class CsvHandler:
+    def __init__(self, fileName, myDelim=','):
+        self.fh = open(fileName, 'wb')
+        self.csvWrt = csv.writer(self.fh, delimiter=myDelim)  #Dialect.delimiter=myDelim)
+
+    def close(self):
+        self.fh.close()
+
+    def writeRow(self, campaignName, impressions, clicks):
+        ctr = getCtr(int(impressions), int(clicks))
+        self.csvWrt.writerow([campaignName,impressions,clicks,ctr])
+
+    def writeDictRow(self, dictKey, dictValue):
+        self.csvWrt.writerow([dictKey, dictValue])
+        
+    # read csv file, defaulted with ',' delimited lines into a dictioary
+    # Note: to read query filters that contain ',' use other delimiter (like '$', and optionaly escaping character)
+    def csvToDictionary(fileName, delimiter=','):
+      csvDict = {}
+      with open(fileName,'r') as f:
+          for line in f:
+              line.rstrip('\n').rstrip('\r')
+              lineParts = line.split(delimiter)  #(key,value)=line.split(',')
+              csvKey = lineParts[0]
+              csvValue = lineParts[1].rstrip('\n').rstrip('\r')
+              csvDict[csvKey] = csvValue         #csvDict.append(csvKey,csvValue)
+      #close(fileName)
+      return csvDict

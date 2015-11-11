@@ -1,0 +1,94 @@
+#!/usr/bin/python
+"""Zip & Mail Distributer: zips files from given directory (with campaigns' data), then sends to contacts-list by mail."""
+
+import os
+import datetime
+import errno
+import zipfile
+import smtplib
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEBase import MIMEBase
+from email.MIMEText import MIMEText
+from email.Utils import COMMASPACE, formatdate
+from email import Encoders
+
+# Util function that recursively zips up a directory-tree into an archive
+# (compressing the files and recording the correct relative filenames)
+def make_zipfile(output_filename, source_dir):
+    relroot = os.path.abspath(os.path.join(source_dir, os.pardir))
+    with zipfile.ZipFile(output_filename, "w", zipfile.ZIP_DEFLATED) as zip:
+        for root, dirs, files in os.walk(source_dir):
+            zip.write(root, os.path.relpath(root, relroot))  # add directory (needed for empty dirs)
+            for file in files:
+                filename = os.path.join(root, file)
+                if os.path.isfile(filename):                 # regular files only, not hidden / links
+                    arcname = os.path.join(os.path.relpath(root, relroot), file)
+                    zip.write(filename, arcname)
+
+# send email with/without attachments to contacts-list
+def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
+    assert type(send_to)==list
+    assert type(files)==list
+
+    msg = MIMEMultipart()
+    msg['From'] = send_from
+    msg['To'] = COMMASPACE.join(send_to)
+    msg['Date'] = formatdate(localtime=True)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(text))
+ 
+    for f in files:    # attach to mail
+        try:
+            part = MIMEBase('application', "base64")   #part = MIMEBase('application', "octet-stream")
+            part.set_payload(open(f,"rb").read())
+            Encoders.encode_base64(part)
+            part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(f))
+            msg.attach(part)
+        except Exception:
+            print "\nERROR: unable to attach file: %s to mail" % os.path.basename(f)
+    #print " Email Total Message-Length is: " + repr(len(msg))    # DEBUG-ONLY
+    
+    try:  # sending
+        smtp = smtplib.SMTP()    #smtp = smtplib.SMTP("192.168.10.1",25) if using fixed mail-server
+        #smtp.set_debuglevel(1)  # DEBUG-ONLY
+        smtp.connect()           #smtp.connect("192.168.10.1",25)
+        smtp.sendmail(send_from, send_to, msg.as_string())
+    except Exception, ex:
+        print "\nERROR: unable to send mail! (Subject: %s)" % subject   # DEBUG-ONLY
+        print "\n  Exception: " % ex                                    # DEBUG-ONLY
+    #smtp.close() # Do NOT always close connection immediately 
+    smtp.quit()
+
+# zip a directory, attach it and send mail
+def zipAndMail(sourcePath, zipFileName, sendToList):
+    # zip the directory
+    make_zipfile(zipFileName, sourcePath)
+
+    # send mail with zip-file attached
+    todayDate = datetime.date.today()    #todayDate = time.strftime("%d_%m_%Y")
+    todayStr = todayDate.strftime("%d_%m_%Y")
+    yesterday = todayDate - datetime.timedelta(days=1)
+    yesterdayStr = yesterday.strftime("%d_%m_%Y")
+    #print ('Today: %s' % todayStr), ('Yesterday: %s' % yesterdayStr)      # DEBUG-ONLY
+    subject = yesterdayStr + " Daily Analytics Report"
+    sendFrom = "GAMS@HagayTech.com"
+    files = [zipFileName]
+    # TEST & DEBUG ONLY (3 lines below)
+    #files = []  #files = ["/home/GAMS/Hag1.txt","/home/GAMS/Hag2.csv","/home/GAMS/Hag3.jpg"]
+    #print " Number of file-attachments = " + repr(len(files))              # DEBUG-ONLY
+    #send_mail(from, sendTo, subject, innerText, files=None, server="127.0.0.1")
+    send_mail(sendFrom, sendToList, subject, "GAMS (Google-Analytics Monitoring Service) Report-data is attached", files)
+    #print " Daily Report-Email (%s) sent successfully" % todayStr          # DEBUG-ONLY
+
+# Use to test directory zipping and mailing
+# (creates test directory for some csv files, zip it, attach and send mail)
+if __name__ == '__main__':
+    basePath = "/home/GAMS/Examples/Mail_Distributer/"
+    try:
+        os.makedirs(basePath, 0777)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
+    #buildExampleCSV(basePath)       #Utility function i use to fill basepath with some files for testing
+    sendToMe = ["hagayo@gmail.com"]  #Put your email Here ;-)
+    zipAndMail(basePath, "Mail_Distributer_Test.zip", sendToMe)

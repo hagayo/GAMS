@@ -3,6 +3,22 @@
 
 import csv
 
+# Util function to calculate CTR (needed only here, can be moved to general utilities file)
+def getCtr(impressions, clicks):
+    ctr = "0%"
+    if (impressions > 0):
+        ctr = 100*clicks/impressions
+        ctr = str(ctr) + "%"
+    return ctr
+    
+# Util function to get yesterday's date-string for printing (move to general utilities file)
+def getDate():
+    todayDate = datetime.date.today()
+    yesterday = todayDate - datetime.timedelta(days=1)
+    yesterdayStr = yesterday.strftime("%d_%M_%Y")
+    #print "Yesterday: ", yesterdayStr   # DEBUG-ONLY
+    return yesterdayStr
+
 class CsvHandler:
     def __init__(self, fileName, myDelim=','):
         self.fh = open(fileName, 'wb')
@@ -29,5 +45,120 @@ class CsvHandler:
               csvKey = lineParts[0]
               csvValue = lineParts[1].rstrip('\n').rstrip('\r')
               csvDict[csvKey] = csvValue         #csvDict.append(csvKey,csvValue)
-      #close(fileName)
+      #close(fileName)            # Not needed since 'with' clause is responsible
       return csvDict
+
+class HtmlHandler:
+    def __init__(self, clientName, fileName):
+        self.fh = open(fileName, 'wb')
+        self.clientName = clientName
+        self.writeHtmlHeader()
+
+        # Parameters can be initialized here to be dynamically updated if/when
+        #  campaigns' data is inserted to the HTML <body> tag line by line
+        #self.tableRow = 1
+        self.bestClicksCampaign = ''
+        self.bestCTRCampaign = ''
+        self.highestClicks = 0
+        self.highestCtr = 0     #'0%'
+
+    def close(self):
+        self.writeHtmlFooter()
+        self.fh.close()
+
+    def writeHtmlHeader(self):
+        #header = ""   +    #self.fh.write(header)
+        self.fh.write('<!DOCTYPE html><html lang="en"><head><title>GAMS by Hagay-Tech</title>')
+        self.fh.write('<meta http-equiv="Content-Type" content="text/html; charset=utf-8">')
+        self.fh.write('<link rel="icon" href="http://hagaytech.webstarts.com/uploads/hagayo.jpg"/>')
+        self.fh.write('<body>')
+
+    def writeHtmlFooter(self):
+        self.fh.write('</body></html>')
+
+    def makeTag(self, tagName, tagContent):
+        tag = '<'+tagName+'>' + tagContent + '</'+tagName+'>'
+        return tag
+
+    def writeCampaignsSummaryDiv(self):
+        self.fh.write('<div style="color:red;">')
+        self.fh.write('<div>Best-Clicks Campaign => <b>' + self.bestClicksCampaign + '</b> (Clicks='+self.highestClicks+')</div>')
+        self.fh.write('<div>Best-CTR Campaign    => <b>' + self.bestCTRCampaign + '</b> (CTR='+self.highestCtr+')</div>')
+        self.fh.write('</div>')
+    
+    def writeRecommendationsDiv(self):
+        self.fh.write('<div style="color:navy;"><div><b> Simple/Example Recommendations: </b></div>')
+        self.fh.write('<div> A) Consider making best-selling campaigns viewable/clickable from Landing pages</div>')
+        self.fh.write('<div> B) Verify best-selling campaigns are reachable through less user\'s clicks</div>')
+        self.fh.write('<div> C) Check if best-selling campaigns can be available for other clients</div>')
+        self.fh.write('<div> D) Offer users more similar flows/campaigns (to best-selling ones)</div>')        
+        self.fh.write('</div>')
+
+    def writeCampaignsReportDiv(self, ...):
+        # Put your HTML report template code here...
+        writeCampaignsSummaryDiv()
+        writeRecommendationsDiv()
+
+class XmlHandler:
+    def __init__(self, fileName):
+        self.fh = open(fileName, 'wb')
+
+    def writeTag(self, tagName, tagContent):
+        tag = '<'+tagName+'>' + tagContent + '</'+tagName+'>'
+        self.fh.write(tag)
+        #tag = tagName + '>'
+        #tagStart = '<' + tag
+        #tagEnd = '</' + tag
+        #line = tagStart + tagContent + tagEnd
+        #self.fh.write(line)
+
+    def close(self):
+        self.fh.close()
+
+class JsonHandler:
+    # Fill more needed formats here as shown above
+
+# ===========  For Unit-testing  ===============
+# ADD MORE RELATED TESTS HERE
+def buildSampleHtmlReport(basePath='./'):
+    htmlFileName = basePath + 'SampleReport.html'
+    myHtml = HtmlHandler('HagayTech',htmlFileName)
+    myHtml.writeCampaignsReportDiv(...)
+    myHtml.close()
+
+# create 3 csv files in a given directory (or current)
+def buildSampleCampaignsCSV(basePath='./'):
+    csvFileName = basePath + 'SampleReport.csv'
+    myCsv = CsvHandler(csvFileName)
+    myCsv.writeRow('Login',159535,3644)
+    myCsv.writeRow('Mail_Subsription',45634,3457)
+    myCsv.writeRow('WhitePapers_Download',93350,548)
+    myCsv.writeRow('Product1_Campaign',9045,84)
+    myCsv.writeRow('Product1_Purchase',1220,66)
+    myCsv.close()
+
+def buildSampleCSVdict(fileName, basePath='./'):
+    csvFileName = basePath + fileName #'SampleDictionary.csv'
+    myCsv = CsvHandler(csvFileName)
+    myCsv.writeRow('Key1','Value1')
+    myCsv.writeRow('Key2','Value2')
+    myCsv.writeRow('Key3','Value3')
+    myCsv.close()
+
+def testCsv2Dict(expectedSize, basePath='./'):
+    csvFileName = basePath + 'SampleDictionary.csv'
+    buildSampleCSVdict(csvFileName)    # , './GAMS/TestFiles/')
+    newDict = csvToDictionary(csvFileName)  #, '$') for special delimiter
+    dictSize = len(newDict)
+    #print " New created dictionary size: ", dictSize       #DEBUG ONLY
+    if (expectedSize == dictSize):
+        print " CSV to Dictionary test is OK"
+    else:
+        print " CSV to Dictionary test has ERROR!"  
+    del newDict
+
+# for testing
+if __name__ == '__main__':
+    buildSampleHtmlReport('./')
+    buildSampleCampaignsCSV('./GAMS/Examples/')
+    testCsv2Dict('./GAMS/TestFiles/')

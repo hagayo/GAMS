@@ -61,8 +61,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
 
 # zip a directory, attach it and send mail
 def zipAndMail(sourcePath, zipFileName, sendToList):
-    # zip the directory
-    make_zipfile(zipFileName, sourcePath)
+    make_zipfile(zipFileName, sourcePath)   # zip the directory
 
     # send mail with zip-file attached
     todayDate = datetime.date.today()    #todayDate = time.strftime("%d_%m_%Y")

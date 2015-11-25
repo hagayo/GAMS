@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Zip & Mail Distributer: zips files from given directory (with campaigns' data), then sends to contacts-list by mail."""
+"""Zip & Mail Distributer: zips files from given directory and sends them to contacts-list by mail."""
 
 import os
 import datetime
@@ -46,7 +46,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
             msg.attach(part)
         except Exception:
             print "\nERROR: unable to attach file: %s to mail" % os.path.basename(f)
-    #print " Email Total Message-Length is: " + repr(len(msg))    # DEBUG-ONLY
+    #print " Email Total Message-Length is: " + repr(len(msg))          # DEBUG-ONLY
     
     try:  # sending
         smtp = smtplib.SMTP()    #smtp = smtplib.SMTP("192.168.10.1",25) if using fixed mail-server
@@ -56,7 +56,7 @@ def send_mail(send_from, send_to, subject, text, files=[], server="localhost"):
     except Exception, ex:
         print "\nERROR: unable to send mail! (Subject: %s)" % subject   # DEBUG-ONLY
         print "\n  Exception: " % ex                                    # DEBUG-ONLY
-    #smtp.close() # Do NOT always close connection immediately 
+    #smtp.close() # Do NOT always close connection immediately
     smtp.quit()
 
 # zip a directory, attach it and send mail
@@ -69,15 +69,15 @@ def zipAndMail(sourcePath, zipFileName, sendToList):
     todayStr = todayDate.strftime("%d_%m_%Y")
     yesterday = todayDate - datetime.timedelta(days=1)
     yesterdayStr = yesterday.strftime("%d_%m_%Y")
-    #print ('Today: %s' % todayStr), ('Yesterday: %s' % yesterdayStr)      # DEBUG-ONLY
+    #print ('Today: %s' % todayStr), ('Yesterday: %s' % yesterdayStr)   # DEBUG-ONLY
     subject = yesterdayStr + " Daily Analytics Report"
     sendFrom = "GAMS@HagayTech.com"
     files = [zipFileName]
     # TEST & DEBUG ONLY (3 lines below)
     #files = []  #files = ["/home/GAMS/Hag1.txt","/home/GAMS/Hag2.csv","/home/GAMS/Hag3.jpg"]
-    #print " Number of file-attachments = " + repr(len(files))              # DEBUG-ONLY
+    #print " Number of file-attachments = " + repr(len(files))
     #send_mail(from, sendTo, subject, innerText, files=None, server="127.0.0.1")
-    send_mail(sendFrom, sendToList, subject, "GAMS (Google-Analytics Monitoring Service) Report-data is attached", files)
+    send_mail(sendFrom, sendToList, subject, "GAMS (Google-Analytics Monitoring Service)\n Report-data is attached", files)
     #print " Daily Report-Email (%s) sent successfully" % todayStr          # DEBUG-ONLY
 
 # Use to test directory zipping and mailing
@@ -89,6 +89,6 @@ if __name__ == '__main__':
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
-    #buildExampleCSV(basePath)       #Utility function i use to fill basepath with some files for testing
-    sendToMe = ["hagayo@gmail.com"]  #Put your email Here ;-)
+    #buildNcopyExampleFiles(basePath)    #Utility function i use to fill basepath with some files for testing
+    sendToMe = ["HagayTech@gmail.com"]   #PUT YOUR EMAIL HERE ;-)
     zipAndMail(basePath, "Mail_Distributer_Test.zip", sendToMe)

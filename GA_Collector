@@ -17,12 +17,14 @@ from oauth2client import tools
 
 class GA_Collector:
 
-    # init the collector's credentials, account, profile and service 
-    def __init__(self, carrierCodeName):     #, secretsFilename, accountEmail):
+    # init the collector's credentials, account, profile and service
+    def __init__(self):
         self.scope = ['https://www.googleapis.com/auth/analytics.readonly'] # Authentication-scopes/Permissions of a GA request
         self.service = self.getAnalyticsService()
-        self.profile = self.getProfileID(carrierCodeName)
-        self.carrierAccountID = 'ga:' + self.profile
+        
+    def setClient(self, clientCodeName):
+        self.profile = self.getProfileID(clientCodeName)
+        self.clientAccountID = 'ga:' + self.profile
 
     # Get a specific Google-API connected service-object used to query/communicate Google Core-Reporting API.
     def getApiService(self, api_name, api_version, scope, key_file_location, service_account_email):
@@ -38,7 +40,7 @@ class GA_Collector:
     # Get Google Analytics-API connected service-object
     def getAnalyticsService(self):
         # Authentication service-account email and key-file location to construct API service
-        # ADD YOUR DEVELOPER EMAIL BELOW
+        # ADD YOUR DEVELOPER-ACCOUNT EMAIL BELOW
         service_account_email = 'XXXXXXXXXXXXXXXXXXXXXX@developer.gserviceaccount.com'
         key_file_location = '/home/GAMS/client_secrets.p12'
         service = self.getApiService('analytics', 'v3', self.scope, key_file_location, service_account_email)
